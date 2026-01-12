@@ -136,6 +136,7 @@ const PARTIES_BASE = [
   { code:"CHARTTHAIPATTANA", th:"พรรคชาติไทยพัฒนา", en:"Chartthaipattana Party", colors:["#FF69B4"] },
   { code:"CHART_PATTANAKLA", th:"พรรคชาติพัฒนากล้า", en:"Chart Pattanakla Party", colors:["#00478F", "#FFD700"] },
   { code:"THAI_KAO_MAI", th:"พรรคไทยก้าวใหม่", en:"Thai Kao Mai Party", colors:["#F47920"] },
+  { code:"NO_VOTE", th: "ไม่เลือกพรรคใด", en: "No Vote", colors: ["#FFFFFF"],
 ];
 
 /** ====== Utils: color & shuffle ====== */
@@ -390,6 +391,10 @@ function renderPartyButtons() {
     b.className = "party-btn";
     b.style.background = partyBackgroundCSS(p.colors);
     b.style.color = pickTextColor(p.colors);
+
+    if (p.code === "NO_VOTE") {
+      b.style.borderColor = "rgba(0,0,0,0.5)
+    }
 
     // เพิ่มขอบจาง ๆ ให้ปุ่มสีอ่อนอ่านง่ายขึ้น
     b.style.borderColor = "rgba(0,0,0,0.18)";

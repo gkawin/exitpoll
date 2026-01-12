@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Exit Poll (Offline)</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 16px;
+      }
+      h2 {
+        margin: 0 0 6px 0;
+        user-select: none;
+      }
+      .small {
+        font-size: 14px;
+        opacity: 0.75;
+        margin-bottom: 12px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      button {
+        padding: 18px;
+        font-size: 18px;
+        border-radius: 14px;
+        border: 1px solid #ccc;
+      }
+      button:disabled {
+        opacity: 0.5;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-size: 14px;
+        display: none;
+      }
+      /* Admin modal */
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+      }
+      .modal {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(520px, calc(100vw - 24px));
+        background: #fff;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        display: none;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      input {
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+      }
+      pre {
+        background: #f6f6f6;
+        padding: 10px;
+        border-radius: 12px;
+        overflow: auto;
+      }
+      .hint {
+        font-size: 13px;
+        opacity: 0.75;
+      }
+    </style>
+    <meta name="theme-color" content="#f5f5f5" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("/sw.js").catch(console.error);
+            });
+        }
+    </script>
+  </head>
+  <body>
+    <h2 id="title">Exit Poll เลือกตั้ง 2569</h2>
+
+    <div class="grid" id="partyButtons"></div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="backdrop" id="backdrop"></div>
+    <div class="modal" id="modal">
+      <h3 style="margin: 0 0 8px 0">Admin Panel</h3>
+      <div class="hint">สถิติ/Export/Undo/Reset อยู่ที่นี่เท่านั้น</div>
+
+      <div class="row" style="align-items: center">
+        <label
+          >Station ID:
+          <input id="stationId" />
+        </label>
+        <button id="saveStationBtn">Save Station</button>
+      </div>
+
+      <pre id="statsBox">Loading...</pre>
+
+      <div class="row">
+        <button id="exportBtn">Export CSV</button>
+        <button id="undoBtn">Undo ล่าสุด</button>
+        <button id="clearBtn">Reset (ล้างข้อมูล)</button>
+        <button id="closeBtn">Close</button>
+      </div>
+
+      <div class="hint" style="margin-top: 8px">ถ้าใช้ iPad แนะนำ Add to Home Screen เพื่อความเสถียรของ offline storage</div>
+    </div>
+
+    <script>
+      /** ====== CONFIG ====== */
+      const PARTIES = [
+        { code: "P01", label: "พรรค 1" },
+        { code: "P02", label: "พรรค 2" },
+        { code: "P03", label: "พรรค 3" },
+        { code: "P04", label: "พรรค 4" },
+      ];
+
+      // เปลี่ยน PIN ตรงนี้
+      const ADMIN_PIN = "2468";
+
+      // กันกดรัว: รับได้ 1 ครั้งต่อกี่ ms
+      const COOLDOWN_MS = 1000;
+
+      /** ====== IndexedDB ====== */
+      const DB_NAME = "exitpoll_db";
+      const STORE = "votes";
+      const DB_VER = 1;
+
+      function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VER);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(STORE)) {
+              const store = db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
+              store.createIndex("ts", "ts");
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function addVote({ stationId, partyCode }) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, "readwrite");
+          tx.objectStore(STORE).add({
+            ts: new Date().toISOString(),
+            stationId,
+            partyCode,
+          });
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      async function getAllVotes() {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, "readonly");
+          const req = tx.objectStore(STORE).getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function deleteLastVote() {
+        const db = await openDB();
+        const all = await getAllVotes();
+        if (!all.length) return false;
+        const last = all[all.length - 1];
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, "readwrite");
+          tx.objectStore(STORE).delete(last.id);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      async function clearAll() {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, "readwrite");
+          tx.objectStore(STORE).clear();
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      /** ====== CSV export ====== */
+      function escapeCSV(v) {
+        const s = String(v ?? "");
+        if (/[",\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+        return s;
+      }
+
+      function toCSV(rows) {
+        const header = ["ts", "stationId", "partyCode"];
+        const lines = [header.join(",")];
+        for (const r of rows) {
+          lines.push([escapeCSV(r.ts), escapeCSV(r.stationId), escapeCSV(r.partyCode)].join(","));
+        }
+        return lines.join("\n");
+      }
+
+      function downloadTextFile(filename, text, mime = "text/csv;charset=utf-8") {
+        const blob = new Blob([text], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      /** ====== UI helpers ====== */
+      const toastEl = document.getElementById("toast");
+      let toastTimer = null;
+
+      function toast(msg) {
+        toastEl.textContent = msg;
+        toastEl.style.display = "block";
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => (toastEl.style.display = "none"), 700);
+      }
+
+      function getStationId() {
+        return (localStorage.getItem("stationId") || "A1").trim() || "A1";
+      }
+
+      /** ====== Prevent rapid taps (global throttle) ====== */
+      let lockedUntil = 0;
+
+      function lockButtons(disabled) {
+        document.querySelectorAll("#partyButtons button").forEach((b) => (b.disabled = disabled));
+      }
+
+      async function safeRecord(partyCode) {
+        const now = Date.now();
+        if (now < lockedUntil) return; // ignore spam taps
+        lockedUntil = now + COOLDOWN_MS;
+
+        // Disable to make it obvious that input is accepted once
+        lockButtons(true);
+
+        try {
+          await addVote({ stationId: getStationId(), partyCode });
+          navigator.vibrate?.(20);
+          toast("บันทึกแล้ว");
+        } finally {
+          const wait = Math.max(0, lockedUntil - Date.now());
+          setTimeout(() => lockButtons(false), wait);
+        }
+      }
+
+      /** ====== Render party buttons ====== */
+      const partyButtons = document.getElementById("partyButtons");
+      function renderButtons() {
+        partyButtons.innerHTML = "";
+        PARTIES.forEach((p, idx) => {
+          const b = document.createElement("button");
+          b.textContent = `${p.label}`;
+          b.onclick = () => safeRecord(p.code);
+          partyButtons.appendChild(b);
+        });
+      }
+      renderButtons();
+
+      /** ====== Optional: keyboard support (1..N) ====== */
+      document.addEventListener("keydown", (e) => {
+        const n = Number(e.key);
+        if (!Number.isFinite(n)) return;
+        if (n >= 1 && n <= PARTIES.length) safeRecord(PARTIES[n - 1].code);
+      });
+
+      /** ====== Admin modal (tap title 5x) ====== */
+      const titleEl = document.getElementById("title");
+      const backdrop = document.getElementById("backdrop");
+      const modal = document.getElementById("modal");
+      const statsBox = document.getElementById("statsBox");
+      const stationIdInput = document.getElementById("stationId");
+
+      let taps = [];
+      titleEl.addEventListener("click", async () => {
+        const now = Date.now();
+        taps = taps.filter((t) => now - t < 1500);
+        taps.push(now);
+        if (taps.length >= 5) {
+          taps = [];
+          const pin = prompt("Enter Admin PIN:");
+          if (pin !== ADMIN_PIN) return;
+
+          stationIdInput.value = getStationId();
+          await refreshStats();
+          backdrop.style.display = "block";
+          modal.style.display = "block";
+        }
+      });
+
+      async function refreshStats() {
+        const rows = await getAllVotes();
+        const counts = {};
+        for (const p of PARTIES) counts[p.code] = 0;
+        for (const r of rows) counts[r.partyCode] = (counts[r.partyCode] || 0) + 1;
+
+        let out = `Total: ${rows.length}\n`;
+        for (const p of PARTIES) out += `${p.code}: ${counts[p.code]}\n`;
+        const last = rows[rows.length - 1];
+        if (last) out += `\nLast: ${last.ts} | ${last.stationId} | ${last.partyCode}`;
+        statsBox.textContent = out;
+      }
+
+      document.getElementById("saveStationBtn").onclick = () => {
+        localStorage.setItem("stationId", stationIdInput.value.trim() || "A1");
+        toast("Saved Station ID");
+      };
+
+      document.getElementById("exportBtn").onclick = async () => {
+        const rows = await getAllVotes();
+        const csv = toCSV(rows);
+        const filename = `exitpoll_${getStationId()}_${new Date().toISOString().slice(0, 10)}.csv`;
+        downloadTextFile(filename, csv);
+      };
+
+      document.getElementById("undoBtn").onclick = async () => {
+        await deleteLastVote();
+        await refreshStats();
+        toast("Undo");
+      };
+
+      document.getElementById("clearBtn").onclick = async () => {
+        if (confirm("ล้างข้อมูลทั้งหมด?")) {
+          await clearAll();
+          await refreshStats();
+          toast("Reset");
+        }
+      };
+
+      document.getElementById("closeBtn").onclick = () => {
+        modal.style.display = "none";
+        backdrop.style.display = "none";
+      };
+
+      backdrop.addEventListener("click", () => {
+        modal.style.display = "none";
+        backdrop.style.display = "none";
+      });
+    </script>
+  </body>
+</html>

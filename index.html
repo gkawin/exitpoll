@@ -1,652 +1,648 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Exit Poll (Offline)</title>
-    <meta name="theme-color" content="#f5f5f5" />
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("sw.js").catch(console.error);
-        });
-      }
-    </script>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        margin: 16px;
-      }
-      h2 {
-        margin: 0 0 6px 0;
-        user-select: none;
-      }
-      .small {
-        font-size: 14px;
-        opacity: 0.75;
-        margin-bottom: 12px;
-        user-select: none;
-      }
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 12px;
-      }
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Exit Poll (Offline)</title>
+  <meta name="theme-color" content="#f5f5f5" />
+  <link rel="stylesheet" href="./css/watermark-card.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(console.error);
+      });
+    }
+  </script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 16px;
+    }
 
-      .party-btn {
-        padding: 18px;
-        border-radius: 14px;
-        border: 1px solid rgba(0, 0, 0, 0.15);
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-        text-align: left;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .party-title {
-        font-size: 18px;
-        font-weight: 800;
-        line-height: 1.1;
-      }
-      .party-sub {
-        font-size: 12px;
-        opacity: 0.9;
-        margin-top: 6px;
-        line-height: 1.2;
-      }
+    h2 {
+      margin: 0 0 6px 0;
+      user-select: none;
+    }
 
-      button:disabled {
-        opacity: 0.55;
-      }
+    .small {
+      font-size: 14px;
+      opacity: 0.75;
+      margin-bottom: 12px;
+      user-select: none;
+    }
 
-      .toast {
-        position: fixed;
-        left: 50%;
-        bottom: 18px;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.88);
-        color: white;
-        padding: 10px 14px;
-        border-radius: 999px;
-        font-size: 14px;
-        display: none;
-      }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
 
-      /* shared modal */
-      .backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        display: none;
-      }
-      .modal {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: min(560px, calc(100vw - 24px));
-        background: #fff;
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-        display: none;
-      }
-      .row {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-      }
-      input {
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px solid #ccc;
-        font-size: 16px;
-      }
-      pre {
-        background: #f6f6f6;
-        padding: 10px;
-        border-radius: 12px;
-        overflow: auto;
-      }
-      .hint {
-        font-size: 13px;
-        opacity: 0.75;
-      }
-      .modal h3 {
-        margin: 0 0 8px 0;
-      }
-      .modal .grid button {
-        padding: 16px;
-        border-radius: 14px;
-        border: 1px solid rgba(0, 0, 0, 0.15);
-        font-size: 18px;
-      }
-    </style>
-  </head>
+    .party-btn {
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+      text-align: left;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-  <body>
-    <h2 id="title">Exit Poll เลือกตั้ง ปี 2569</h2>
+    .party-title {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
 
-    <div class="grid" id="partyButtons"></div>
+    .party-sub {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 6px;
+      line-height: 1.2;
+    }
 
-    <div class="toast" id="toast"></div>
+    button:disabled {
+      opacity: 0.55;
+    }
 
-    <!-- Referendum modal -->
-    <div class="backdrop" id="refBackdrop"></div>
-    <div class="modal" id="refModal">
-      <h3>ประชามติแก้รัฐธรรมนูญ</h3>
-      <div class="hint">เฉพาะผู้มีสิทธิ์ • ถ้าไม่มีสิทธิ์ให้กด “ไม่มีสิทธิ์ลงประชามติ”</div>
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.88);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      display: none;
+    }
 
-      <div class="grid" style="margin-top: 12px">
-        <button id="agreeBtn">เห็นชอบ</button>
-        <button id="disagreeBtn">ไม่เห็นชอบ</button>
-        <button id="noRightBtn">ไม่มีสิทธิ์ลงประชามติ</button>
-        <button id="skipBtn">ไม่สะดวกตอบ</button>
-      </div>
+    /* shared modal */
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+    }
 
-      <div class="row" style="margin-top: 12px">
-        <button id="refBackBtn">ย้อนกลับ (เปลี่ยนพรรค)</button>
-      </div>
+    .modal {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(560px, calc(100vw - 24px));
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      display: none;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    pre {
+      background: #f6f6f6;
+      padding: 10px;
+      border-radius: 12px;
+      overflow: auto;
+    }
+
+    .hint {
+      font-size: 13px;
+      opacity: 0.75;
+    }
+
+    .modal h3 {
+      margin: 0 0 8px 0;
+    }
+
+    .modal .grid button {
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2 id="title">Exit Poll เลือกตั้ง ปี 2569</h2>
+
+  <div class="grid" id="partyButtons"></div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Referendum modal -->
+  <div class="backdrop" id="refBackdrop"></div>
+  <div class="modal" id="refModal">
+    <h3>ประชามติแก้รัฐธรรมนูญ</h3>
+    <div class="hint">เฉพาะผู้มีสิทธิ์ • ถ้าไม่มีสิทธิ์ให้กด “ไม่มีสิทธิ์ลงประชามติ”</div>
+
+    <div class="grid" style="margin-top: 12px">
+      <button id="agreeBtn">เห็นชอบ</button>
+      <button id="disagreeBtn">ไม่เห็นชอบ</button>
+      <button id="noRightBtn">ไม่มีสิทธิ์ลงประชามติ</button>
+      <button id="skipBtn">ไม่สะดวกตอบ</button>
     </div>
 
-    <!-- Admin modal -->
-    <div class="backdrop" id="adminBackdrop"></div>
-    <div class="modal" id="adminModal">
-      <h3>Admin Panel</h3>
-      <div class="hint">สถิติ/Export/Undo/Reset อยู่ที่นี่เท่านั้น</div>
+    <div class="row" style="margin-top: 12px">
+      <button id="refBackBtn">ย้อนกลับ (เปลี่ยนพรรค)</button>
+    </div>
+  </div>
 
-      <div class="row" style="align-items: center">
-        <label
-          >Station ID:
-          <input id="stationId" />
-        </label>
-        <button id="saveStationBtn">Save Station</button>
-      </div>
+  <!-- Admin modal -->
+  <div class="backdrop" id="adminBackdrop"></div>
+  <div class="modal" id="adminModal">
+    <h3>Admin Panel</h3>
+    <div class="hint">สถิติ/Export/Undo/Reset อยู่ที่นี่เท่านั้น</div>
 
-      <pre id="statsBox">Loading...</pre>
-
-      <div class="row">
-        <button id="exportBtn">Export CSV</button>
-        <button id="undoBtn">Undo ล่าสุด</button>
-        <button id="clearBtn">Reset (ล้างข้อมูล)</button>
-        <button id="closeAdminBtn">Close</button>
-      </div>
+    <div class="row" style="align-items: center">
+      <label>Station ID:
+        <input id="stationId" />
+      </label>
+      <button id="saveStationBtn">Save Station</button>
     </div>
 
-    <script>
-      /** ====== CONFIG ====== */
-      const ADMIN_PIN = "2468";
+    <pre id="statsBox">Loading...</pre>
 
-      // กันกดรัว “เข้มขึ้น”
-      const COOLDOWN_MS = 1100;
+    <div class="row">
+      <button id="exportBtn">Export CSV</button>
+      <button id="undoBtn">Undo ล่าสุด</button>
+      <button id="clearBtn">Reset (ล้างข้อมูล)</button>
+      <button id="closeAdminBtn">Close</button>
+    </div>
+  </div>
 
-      // ปิดไว้ก่อน เพราะ shuffle แล้วกดเลขเสี่ยงกดผิด
-      const ENABLE_NUMBER_KEYS = false;
+  <script>
+    /** ====== CONFIG ====== */
+    const ADMIN_PIN = "2468";
 
-      /** 10 parties + colors */
-      const PARTIES_BASE = [
-        { code: "PEOPLE", number: "46", th: "พรรคประชาชน", en: "People's Party", colors: ["#F26522"] },
-        { code: "PHEU_THAI", number: "9", th: "พรรคเพื่อไทย", en: "Pheu Thai Party", colors: ["#DA2128"] },
-        { code: "BHUMJAITHAI", number: "37", th: "พรรคภูมิใจไทย", en: "Bhumjaithai Party", colors: ["#000080"] },
-        { code: "DEMOCRAT", number: "27", th: "พรรคประชาธิปัตย์", en: "Democrat Party", colors: ["#00AEEF"] },
-        { code: "UTN", number: "6", th: "พรรครวมไทยสร้างชาติ", en: "United Thai Nation Party", colors: ["#192143"] },
-        { code: "PPRP", number: "43", th: "พรรคพลังประชารัฐ", en: "Palang Pracharath Party", colors: ["#0000FF", "#FF0000"] },
-        { code: "THAI_SANG_THAI",number: "48", th: "พรรคไทยสร้างไทย", en: "Thai Sang Thai Party", colors: ["#7338D8", "#F7EC67"] },
-        { code: "PRACHACHART",number: "33", th: "พรรคประชาชาติ", en: "Prachachart Party", colors: ["#FCE48C"] },
-        { code: "KLA_THUM", number:"42", th: "พรรคกล้าธรรม", en: "Kla Thum Party", colors: ["#D4A536","#00176F", "#6CC965"] },
-        { code: "THAI_KAO_MAI", number: "49", th: "พรรคไทยก้าวใหม่", en: "Thai Kao Mai Party", colors: ["#2D2D48"] },
-        { code: "ECON", number: "11", th: "พรรคเศรษฐกิจ", en: "Economic Party", colors: ["#FFC155", "#000000"]},
-        { code: "OTHER", th: "พรรคอื่นๆ", en: "Other Party", colors: ["#888888"] },
-        { code: "NO_VOTE", th: "ไม่เลือกพรรคใด", en: "No Vote", colors: ["#FFFFFF"] },
-      ];
+    // กันกดรัว “เข้มขึ้น”
+    const COOLDOWN_MS = 1100;
 
-      /** ====== Utils: color & shuffle ====== */
-      function hexToRgb(hex) {
-        const h = hex.replace("#", "").trim();
-        const full =
-          h.length === 3
-            ? h
-                .split("")
-                .map((c) => c + c)
-                .join("")
-            : h;
-        const n = parseInt(full, 16);
-        return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    // ปิดไว้ก่อน เพราะ shuffle แล้วกดเลขเสี่ยงกดผิด
+    const ENABLE_NUMBER_KEYS = false;
+
+    /** 10 parties + colors */
+    const PARTIES_BASE = [
+      { code: "PEOPLE", number: "46", th: "พรรคประชาชน", en: "People's Party", colors: ["#F26522"] },
+      { code: "PHEU_THAI", number: "9", th: "พรรคเพื่อไทย", en: "Pheu Thai Party", colors: ["#DA2128"] },
+      { code: "BHUMJAITHAI", number: "37", th: "พรรคภูมิใจไทย", en: "Bhumjaithai Party", colors: ["#000080"] },
+      { code: "DEMOCRAT", number: "27", th: "พรรคประชาธิปัตย์", en: "Democrat Party", colors: ["#00AEEF"] },
+      { code: "UTN", number: "6", th: "พรรครวมไทยสร้างชาติ", en: "United Thai Nation Party", colors: ["#192143"] },
+      { code: "PPRP", number: "43", th: "พรรคพลังประชารัฐ", en: "Palang Pracharath Party", colors: ["#0000FF", "#FF0000"] },
+      { code: "THAI_SANG_THAI", number: "48", th: "พรรคไทยสร้างไทย", en: "Thai Sang Thai Party", colors: ["#7338D8", "#F7EC67"] },
+      { code: "PRACHACHART", number: "33", th: "พรรคประชาชาติ", en: "Prachachart Party", colors: ["#FCE48C"] },
+      { code: "KLA_THUM", number: "42", th: "พรรคกล้าธรรม", en: "Kla Thum Party", colors: ["#D4A536", "#00176F", "#6CC965"] },
+      { code: "THAI_KAO_MAI", number: "49", th: "พรรคไทยก้าวใหม่", en: "Thai Kao Mai Party", colors: ["#2D2D48"] },
+      { code: "ECON", number: "11", th: "พรรคเศรษฐกิจ", en: "Economic Party", colors: ["#FFC155", "#000000"] },
+      { code: "OTHER", th: "พรรคอื่นๆ", en: "Other Party", colors: ["#888888"] },
+      { code: "NO_VOTE", th: "ไม่เลือกพรรคใด", en: "No Vote", colors: ["#FFFFFF"] },
+    ];
+
+    /** ====== Utils: color & shuffle ====== */
+    function hexToRgb(hex) {
+      const h = hex.replace("#", "").trim();
+      const full =
+        h.length === 3
+          ? h
+            .split("")
+            .map((c) => c + c)
+            .join("")
+          : h;
+      const n = parseInt(full, 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+    function blendRgb(fg, bg, a) {
+      return {
+        r: Math.round(fg.r * a + bg.r * (1 - a)),
+        g: Math.round(fg.g * a + bg.g * (1 - a)),
+        b: Math.round(fg.b * a + bg.b * (1 - a)),
+      };
+    }
+    function relLuminanceFromRgb({ r, g, b }) {
+      const srgb = [r, g, b].map(v => {
+        const x = v / 255;
+        return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+    }
+    function relLuminance(hex, alpha = 1, baseBgHex = "#FFFFFF") {
+      const fg = hexToRgb(hex);
+      const bg = hexToRgb(baseBgHex);
+      const blended = alpha < 1 ? blendRgb(fg, bg, alpha) : fg;
+      return relLuminanceFromRgb(blended);
+    }
+    function pickTextColor(colors, alpha = 1, baseBgHex = "#FFFFFF") {
+      const avgLum = colors.map(c => relLuminance(c, alpha, baseBgHex)).reduce((a, b) => a + b, 0) / colors.length;
+      // threshold ปรับได้: ต่ำ = ฉากมืด -> ใช้ขาว
+      return avgLum < 0.45 ? "#FFFFFF" : "#111111";
+    }
+    // Fisher–Yates shuffle
+    function shuffleInPlace(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
-      function blendRgb(fg, bg, a) {
-        return {
-          r: Math.round(fg.r * a + bg.r * (1 - a)),
-          g: Math.round(fg.g * a + bg.g * (1 - a)),
-          b: Math.round(fg.b * a + bg.b * (1 - a)),
+    }
+
+    /** ====== IndexedDB ====== */
+    const DB_NAME = "exitpoll_db";
+    const STORE = "votes";
+    const DB_VER = 1;
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VER);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(STORE)) {
+            const store = db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
+            store.createIndex("ts", "ts");
+          }
         };
-      }
-      function relLuminanceFromRgb({ r, g, b }) {
-        const srgb = [r, g, b].map(v => {
-          const x = v / 255;
-          return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function addVote({ stationId, partyCode, referendum }) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).add({
+          ts: new Date().toISOString(),
+          stationId,
+          partyCode,
+          referendum, // "AGREE" | "DISAGREE" | "NO_RIGHT" | "NA"
         });
-        return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
-      }
-      function relLuminance(hex, alpha = 1, baseBgHex = "#FFFFFF") {
-        const fg = hexToRgb(hex);
-        const bg = hexToRgb(baseBgHex);
-        const blended = alpha < 1 ? blendRgb(fg, bg, alpha) : fg;
-        return relLuminanceFromRgb(blended);
-      }
-      function pickTextColor(colors, alpha = 1, baseBgHex = "#FFFFFF") {
-        const avgLum = colors.map(c => relLuminance(c, alpha, baseBgHex)).reduce((a, b) => a + b, 0) / colors.length;
-        // threshold ปรับได้: ต่ำ = ฉากมืด -> ใช้ขาว
-        return avgLum < 0.45 ? "#FFFFFF" : "#111111";
-      }
-      // Fisher–Yates shuffle
-      function shuffleInPlace(arr) {
-        for (let i = arr.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-      }
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
 
-      /** ====== IndexedDB ====== */
-      const DB_NAME = "exitpoll_db";
-      const STORE = "votes";
-      const DB_VER = 1;
+    async function getAllVotes() {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE, "readonly");
+        const req = tx.objectStore(STORE).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
 
-      function openDB() {
-        return new Promise((resolve, reject) => {
-          const req = indexedDB.open(DB_NAME, DB_VER);
-          req.onupgradeneeded = () => {
-            const db = req.result;
-            if (!db.objectStoreNames.contains(STORE)) {
-              const store = db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
-              store.createIndex("ts", "ts");
-            }
-          };
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
+    async function deleteLastVote() {
+      const db = await openDB();
+      const all = await getAllVotes();
+      if (!all.length) return false;
+      const last = all[all.length - 1];
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).delete(last.id);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function clearAll() {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).clear();
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    /** ====== CSV export ====== */
+    function escapeCSV(v) {
+      const s = String(v ?? "");
+      if (/[",\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+      return s;
+    }
+    function toCSV(rows) {
+      const header = ["ts", "stationId", "partyCode", "referendum"];
+      const lines = [header.join(",")];
+      for (const r of rows) {
+        lines.push([escapeCSV(r.ts), escapeCSV(r.stationId), escapeCSV(r.partyCode), escapeCSV(r.referendum || "")].join(","));
+      }
+      return lines.join("\n");
+    }
+    function downloadTextFile(filename, text, mime = "text/csv;charset=utf-8") {
+      const blob = new Blob([text], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    /** ====== UI helpers ====== */
+    const toastEl = document.getElementById("toast");
+    let toastTimer = null;
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.style.display = "block";
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => (toastEl.style.display = "none"), 750);
+    }
+
+    function getStationId() {
+      return (localStorage.getItem("stationId") || "A1").trim() || "A1";
+    }
+
+    /** ====== Party order (shuffled) ====== */
+    let partyOrder = PARTIES_BASE.map((p) => ({ ...p }));
+    shuffleInPlace(partyOrder);
+
+    /** ====== prevent rapid taps ====== */
+    let lockedUntil = 0;
+    function lockPartyButtons(disabled) {
+      document.querySelectorAll("#partyButtons button").forEach((b) => (b.disabled = disabled));
+    }
+
+    /** ====== Referendum modal flow ====== */
+    const refBackdrop = document.getElementById("refBackdrop");
+    const refModal = document.getElementById("refModal");
+    const agreeBtn = document.getElementById("agreeBtn");
+    const disagreeBtn = document.getElementById("disagreeBtn");
+    const noRightBtn = document.getElementById("noRightBtn");
+    const skipBtn = document.getElementById("skipBtn");
+    const refBackBtn = document.getElementById("refBackBtn");
+
+    let pendingPartyCode = null;
+    let awaitingRef = false;
+
+    function openRefModal() {
+      refBackdrop.style.display = "block";
+      refModal.style.display = "block";
+    }
+    function closeRefModal() {
+      refModal.style.display = "none";
+      refBackdrop.style.display = "none";
+    }
+    function lockRefButtons(disabled) {
+      agreeBtn.disabled = disabled;
+      disagreeBtn.disabled = disabled;
+      noRightBtn.disabled = disabled;
+      skipBtn.disabled = disabled;
+      refBackBtn.disabled = disabled;
+    }
+
+    async function onPartyPicked(partyCode) {
+      const now = Date.now();
+      if (now < lockedUntil || awaitingRef) return;
+
+      awaitingRef = true;
+      pendingPartyCode = partyCode;
+
+      lockPartyButtons(true);
+      lockRefButtons(false);
+      openRefModal();
+    }
+
+    async function commitWithReferendum(choice) {
+      if (!pendingPartyCode) return;
+
+      lockRefButtons(true);
+
+      try {
+        await addVote({
+          stationId: getStationId(),
+          partyCode: pendingPartyCode,
+          referendum: choice,
         });
-      }
-
-      async function addVote({ stationId, partyCode, referendum }) {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE, "readwrite");
-          tx.objectStore(STORE).add({
-            ts: new Date().toISOString(),
-            stationId,
-            partyCode,
-            referendum, // "AGREE" | "DISAGREE" | "NO_RIGHT" | "NA"
-          });
-          tx.oncomplete = () => resolve(true);
-          tx.onerror = () => reject(tx.error);
-        });
-      }
-
-      async function getAllVotes() {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE, "readonly");
-          const req = tx.objectStore(STORE).getAll();
-          req.onsuccess = () => resolve(req.result || []);
-          req.onerror = () => reject(req.error);
-        });
-      }
-
-      async function deleteLastVote() {
-        const db = await openDB();
-        const all = await getAllVotes();
-        if (!all.length) return false;
-        const last = all[all.length - 1];
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE, "readwrite");
-          tx.objectStore(STORE).delete(last.id);
-          tx.oncomplete = () => resolve(true);
-          tx.onerror = () => reject(tx.error);
-        });
-      }
-
-      async function clearAll() {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE, "readwrite");
-          tx.objectStore(STORE).clear();
-          tx.oncomplete = () => resolve(true);
-          tx.onerror = () => reject(tx.error);
-        });
-      }
-
-      /** ====== CSV export ====== */
-      function escapeCSV(v) {
-        const s = String(v ?? "");
-        if (/[",\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
-        return s;
-      }
-      function toCSV(rows) {
-        const header = ["ts", "stationId", "partyCode", "referendum"];
-        const lines = [header.join(",")];
-        for (const r of rows) {
-          lines.push([escapeCSV(r.ts), escapeCSV(r.stationId), escapeCSV(r.partyCode), escapeCSV(r.referendum || "")].join(","));
-        }
-        return lines.join("\n");
-      }
-      function downloadTextFile(filename, text, mime = "text/csv;charset=utf-8") {
-        const blob = new Blob([text], { type: mime });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      }
-
-      /** ====== UI helpers ====== */
-      const toastEl = document.getElementById("toast");
-      let toastTimer = null;
-      function toast(msg) {
-        toastEl.textContent = msg;
-        toastEl.style.display = "block";
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => (toastEl.style.display = "none"), 750);
-      }
-
-      function getStationId() {
-        return (localStorage.getItem("stationId") || "A1").trim() || "A1";
-      }
-
-      /** ====== Party order (shuffled) ====== */
-      let partyOrder = PARTIES_BASE.map((p) => ({ ...p }));
-      shuffleInPlace(partyOrder);
-
-      /** ====== prevent rapid taps ====== */
-      let lockedUntil = 0;
-      function lockPartyButtons(disabled) {
-        document.querySelectorAll("#partyButtons button").forEach((b) => (b.disabled = disabled));
-      }
-
-      /** ====== Referendum modal flow ====== */
-      const refBackdrop = document.getElementById("refBackdrop");
-      const refModal = document.getElementById("refModal");
-      const agreeBtn = document.getElementById("agreeBtn");
-      const disagreeBtn = document.getElementById("disagreeBtn");
-      const noRightBtn = document.getElementById("noRightBtn");
-      const skipBtn = document.getElementById("skipBtn");
-      const refBackBtn = document.getElementById("refBackBtn");
-
-      let pendingPartyCode = null;
-      let awaitingRef = false;
-
-      function openRefModal() {
-        refBackdrop.style.display = "block";
-        refModal.style.display = "block";
-      }
-      function closeRefModal() {
-        refModal.style.display = "none";
-        refBackdrop.style.display = "none";
-      }
-      function lockRefButtons(disabled) {
-        agreeBtn.disabled = disabled;
-        disagreeBtn.disabled = disabled;
-        noRightBtn.disabled = disabled;
-        skipBtn.disabled = disabled;
-        refBackBtn.disabled = disabled;
-      }
-
-      async function onPartyPicked(partyCode) {
-        const now = Date.now();
-        if (now < lockedUntil || awaitingRef) return;
-
-        awaitingRef = true;
-        pendingPartyCode = partyCode;
-
-        lockPartyButtons(true);
-        lockRefButtons(false);
-        openRefModal();
-      }
-
-      async function commitWithReferendum(choice) {
-        if (!pendingPartyCode) return;
-
-        lockRefButtons(true);
-
-        try {
-          await addVote({
-            stationId: getStationId(),
-            partyCode: pendingPartyCode,
-            referendum: choice,
-          });
-          navigator.vibrate?.(20);
-          toast("บันทึกแล้ว");
-        } finally {
-          closeRefModal();
-          pendingPartyCode = null;
-          awaitingRef = false;
-
-          // เริ่ม cooldown หลังบันทึกสำเร็จ
-          lockedUntil = Date.now() + COOLDOWN_MS;
-
-          // สำคัญ: shuffle สำหรับคนถัดไป (หลังบันทึกเสร็จ)
-          shuffleInPlace(partyOrder);
-          renderPartyButtons();
-
-          const wait = Math.max(0, lockedUntil - Date.now());
-          setTimeout(() => lockPartyButtons(false), wait);
-        }
-      }
-
-      agreeBtn.onclick = () => commitWithReferendum("AGREE");
-      disagreeBtn.onclick = () => commitWithReferendum("DISAGREE");
-      noRightBtn.onclick = () => commitWithReferendum("NO_RIGHT");
-      skipBtn.onclick = () => commitWithReferendum("NA");
-
-      refBackBtn.onclick = () => {
-        // ไม่บันทึกอะไร แล้วกลับไปเลือกพรรคใหม่
+        navigator.vibrate?.(20);
+        toast("บันทึกแล้ว");
+      } finally {
         closeRefModal();
         pendingPartyCode = null;
         awaitingRef = false;
-        lockPartyButtons(false);
-      };
-      refBackdrop.addEventListener("click", () => refBackBtn.onclick());
 
-      /** ====== Render party buttons with colors ====== */
-      const partyButtonsEl = document.getElementById("partyButtons");
-      function partyBackgroundCSS(colors, alpha = 1) {
-        if (!colors || colors.length === 0) return "#FFFFFF";
+        // เริ่ม cooldown หลังบันทึกสำเร็จ
+        lockedUntil = Date.now() + COOLDOWN_MS;
 
-        // helper to return either hex or rgba based on alpha
-        const toCssColor = (hex) => {
-          if (alpha >= 1) return hex;
-          const { r, g, b } = hexToRgb(hex);
-          return `rgba(${r},${g},${b},${alpha})`;
-        };
+        // สำคัญ: shuffle สำหรับคนถัดไป (หลังบันทึกเสร็จ)
+        shuffleInPlace(partyOrder);
+        renderPartyButtons();
 
-        if (colors.length === 1) {
-          return toCssColor(colors[0]);
-        }
-
-        // two-color special layout (keeps the previous visual emphasis)
-        if (colors.length === 2) {
-          return `linear-gradient(90deg, ${toCssColor(colors[0])} 0 30%, ${toCssColor(
-        colors[1]
-          )} 70% 100%)`;
-        }
-
-        // for 3+ colors distribute stops evenly
-        const n = colors.length;
-        const stops = colors
-          .map((c, i) => `${toCssColor(c)} ${Math.round((i / (n - 1)) * 100)}%`)
-          .join(", ");
-        return `linear-gradient(90deg, ${stops})`;
+        const wait = Math.max(0, lockedUntil - Date.now());
+        setTimeout(() => lockPartyButtons(false), wait);
       }
+    }
 
-      function renderPartyButtons() {
-        partyButtonsEl.innerHTML = "";
-        const ALPHA = 0.8
+    agreeBtn.onclick = () => commitWithReferendum("AGREE");
+    disagreeBtn.onclick = () => commitWithReferendum("DISAGREE");
+    noRightBtn.onclick = () => commitWithReferendum("NO_RIGHT");
+    skipBtn.onclick = () => commitWithReferendum("NA");
 
-        for (const p of partyOrder) {
-          const b = document.createElement("button");
-          b.className = "party-btn";
-          b.style.background = partyBackgroundCSS(p.colors, ALPHA);
-          b.style.color = pickTextColor(p.colors, ALPHA);
+    refBackBtn.onclick = () => {
+      // ไม่บันทึกอะไร แล้วกลับไปเลือกพรรคใหม่
+      closeRefModal();
+      pendingPartyCode = null;
+      awaitingRef = false;
+      lockPartyButtons(false);
+    };
+    refBackdrop.addEventListener("click", () => refBackBtn.onclick());
 
-          if (p.code === "NO_VOTE") {
-            b.style.borderColor = "rgba(0,0,0,0.5)";
-          }
+    /** ====== Render party buttons with colors ====== */
+    const partyButtonsEl = document.getElementById("partyButtons");
+    function partyBackgroundCSS(colors, alpha = 1) {
+      if (!colors || colors.length === 0) return "#FFFFFF";
 
-          b.style.borderColor = "rgba(0,0,0,0.18)";
-
-          const content = document.createElement("div");
-          content.style.display = "flex";
-          content.style.alignItems = "center";
-          content.style.gap = "12px";
-
-          const iconWrapper = document.createElement("div");
-          iconWrapper.style.width = "52px";
-          iconWrapper.style.height = "52px";
-          iconWrapper.style.borderRadius = "12px";
-          iconWrapper.style.background = "rgba(255,255,255,0.22)";
-          iconWrapper.style.display = "flex";
-          iconWrapper.style.alignItems = "center";
-          iconWrapper.style.justifyContent = "center";
-          iconWrapper.style.border = "1px solid rgba(0,0,0,0.1)";
-
-          const icon = document.createElement("img");
-          icon.src = p.icon || `icons/${p.code.toLowerCase()}.png`;
-          icon.alt = `${p.th} logo`;
-          icon.loading = "lazy";
-          icon.style.width = "52px";
-          icon.style.height = "52px";
-          icon.style.objectFit = "contain";
-          icon.onerror = () => {
-            icon.onerror = null;
-            icon.src = `https://picsum.photos/seed/${encodeURIComponent(p.code)}/64`;
-          };
-          iconWrapper.appendChild(icon);
-
-          const label = document.createElement("div");
-          label.innerHTML = `
-    <div class="party-title">${p.th}</div>
-    `;
-
-          content.appendChild(iconWrapper);
-          content.appendChild(label);
-
-          b.appendChild(content);
-          b.onclick = () => onPartyPicked(p.code);
-          partyButtonsEl.appendChild(b);
-        }
-      }
-      renderPartyButtons();
-
-      /** ====== Optional: number keys (disabled by default) ====== */
-      document.addEventListener("keydown", (e) => {
-        if (!ENABLE_NUMBER_KEYS) return;
-        const n = Number(e.key);
-        if (!Number.isFinite(n)) return;
-        if (n >= 1 && n <= partyOrder.length) onPartyPicked(partyOrder[n - 1].code);
-      });
-
-      /** ====== Admin modal ====== */
-      const titleEl = document.getElementById("title");
-      const adminBackdrop = document.getElementById("adminBackdrop");
-      const adminModal = document.getElementById("adminModal");
-      const statsBox = document.getElementById("statsBox");
-      const stationIdInput = document.getElementById("stationId");
-
-      let taps = [];
-      titleEl.addEventListener("click", async () => {
-        const now = Date.now();
-        taps = taps.filter((t) => now - t < 1500);
-        taps.push(now);
-        if (taps.length >= 5) {
-          taps = [];
-          const pin = prompt("Enter Admin PIN:");
-          if (pin !== ADMIN_PIN) return;
-
-          stationIdInput.value = getStationId();
-          await refreshStats();
-          adminBackdrop.style.display = "block";
-          adminModal.style.display = "block";
-        }
-      });
-
-      function refLabel(x) {
-        return (
-          {
-            AGREE: "เห็นชอบ",
-            DISAGREE: "ไม่เห็นชอบ",
-            NO_RIGHT: "ไม่มีสิทธิ์",
-            NA: "ไม่สะดวกตอบ",
-          }[x] || x
-        );
-      }
-
-      async function refreshStats() {
-        const rows = await getAllVotes();
-
-        // party counts
-        const partyCounts = {};
-        for (const p of PARTIES_BASE) partyCounts[p.code] = 0;
-        for (const r of rows) partyCounts[r.partyCode] = (partyCounts[r.partyCode] || 0) + 1;
-
-        // referendum totals
-        const refTotals = { AGREE: 0, DISAGREE: 0, NO_RIGHT: 0, NA: 0 };
-        for (const r of rows) {
-          if (refTotals[r.referendum] !== undefined) refTotals[r.referendum]++;
-        }
-
-        let out = `Total: ${rows.length}\n\n[Referendum]\n`;
-        for (const k of ["AGREE", "DISAGREE", "NO_RIGHT", "NA"]) out += `${refLabel(k)}: ${refTotals[k]}\n`;
-
-        out += `\n[Party]\n`;
-        for (const p of PARTIES_BASE) out += `${p.th} (${p.code}): ${partyCounts[p.code] || 0}\n`;
-
-        const last = rows[rows.length - 1];
-        if (last) out += `\nLast: ${last.ts} | ${last.stationId} | ${last.partyCode} | ${refLabel(last.referendum)}`;
-
-        statsBox.textContent = out;
-      }
-
-      document.getElementById("saveStationBtn").onclick = () => {
-        localStorage.setItem("stationId", stationIdInput.value.trim() || "A1");
-        toast("Saved Station ID");
+      // helper to return either hex or rgba based on alpha
+      const toCssColor = (hex) => {
+        if (alpha >= 1) return hex;
+        const { r, g, b } = hexToRgb(hex);
+        return `rgba(${r},${g},${b},${alpha})`;
       };
 
-      document.getElementById("exportBtn").onclick = async () => {
-        const rows = await getAllVotes();
-        const csv = toCSV(rows);
-        const filename = `exitpoll_${getStationId()}_${new Date().toISOString().slice(0, 10)}.csv`;
-        downloadTextFile(filename, csv);
-      };
+      if (colors.length === 1) {
+        return toCssColor(colors[0]);
+      }
 
-      document.getElementById("undoBtn").onclick = async () => {
-        await deleteLastVote();
+      // two-color special layout (keeps the previous visual emphasis)
+      if (colors.length === 2) {
+        return `linear-gradient(90deg, ${toCssColor(colors[0])} 0 30%, ${toCssColor(
+          colors[1]
+        )} 70% 100%)`;
+      }
+
+      // for 3+ colors distribute stops evenly
+      const n = colors.length;
+      const stops = colors
+        .map((c, i) => `${toCssColor(c)} ${Math.round((i / (n - 1)) * 100)}%`)
+        .join(", ");
+      return `linear-gradient(90deg, ${stops})`;
+    }
+
+
+    function renderPartyButtons() {
+      partyButtonsEl.innerHTML = "";
+
+      for (const p of partyOrder) {
+        const b = document.createElement("div");
+        b.className = "party-card";
+        b.style = "--band:" + p.colors[0];
+
+
+        const accent = document.createElement("div");
+        accent.className = "accent";
+
+        const partyLeft = document.createElement("div");
+        partyLeft.className = "party-left";
+        const partyLogo = document.createElement("div");
+        partyLogo.className = "party-logo";
+        partyLogo.textContent = "Logo";
+        const partyText = document.createElement("div");
+        partyText.className = "party-text";
+        const partyName = document.createElement("div");
+        partyName.className = "party-name";
+        partyName.textContent = p.th;
+        const partySub = document.createElement("div");
+        partySub.className = "party-sub";
+        partySub.textContent = p.en;  
+
+        partyText.appendChild(partyName);
+        partyText.appendChild(partySub);
+        partyLeft.appendChild(partyLogo);
+        partyLeft.appendChild(partyText);
+        b.appendChild(accent);
+        b.appendChild(partyLeft); 
+
+        b.onclick = () => onPartyPicked(p.code);
+        partyButtonsEl.appendChild(b);
+
+
+      }
+    }
+    renderPartyButtons();
+
+    /** ====== Optional: number keys (disabled by default) ====== */
+    document.addEventListener("keydown", (e) => {
+      if (!ENABLE_NUMBER_KEYS) return;
+      const n = Number(e.key);
+      if (!Number.isFinite(n)) return;
+      if (n >= 1 && n <= partyOrder.length) onPartyPicked(partyOrder[n - 1].code);
+    });
+
+    /** ====== Admin modal ====== */
+    const titleEl = document.getElementById("title");
+    const adminBackdrop = document.getElementById("adminBackdrop");
+    const adminModal = document.getElementById("adminModal");
+    const statsBox = document.getElementById("statsBox");
+    const stationIdInput = document.getElementById("stationId");
+
+    let taps = [];
+    titleEl.addEventListener("click", async () => {
+      const now = Date.now();
+      taps = taps.filter((t) => now - t < 1500);
+      taps.push(now);
+      if (taps.length >= 5) {
+        taps = [];
+        const pin = prompt("Enter Admin PIN:");
+        if (pin !== ADMIN_PIN) return;
+
+        stationIdInput.value = getStationId();
         await refreshStats();
-        toast("Undo");
-      };
+        adminBackdrop.style.display = "block";
+        adminModal.style.display = "block";
+      }
+    });
 
-      document.getElementById("clearBtn").onclick = async () => {
-        if (confirm("ล้างข้อมูลทั้งหมด?")) {
-          await clearAll();
-          await refreshStats();
-          toast("Reset");
-        }
-      };
+    function refLabel(x) {
+      return (
+        {
+          AGREE: "เห็นชอบ",
+          DISAGREE: "ไม่เห็นชอบ",
+          NO_RIGHT: "ไม่มีสิทธิ์",
+          NA: "ไม่สะดวกตอบ",
+        }[x] || x
+      );
+    }
 
-      document.getElementById("closeAdminBtn").onclick = () => {
-        adminModal.style.display = "none";
-        adminBackdrop.style.display = "none";
-      };
+    async function refreshStats() {
+      const rows = await getAllVotes();
 
-      adminBackdrop.addEventListener("click", () => {
-        adminModal.style.display = "none";
-        adminBackdrop.style.display = "none";
-      });
-    </script>
-  </body>
+      // party counts
+      const partyCounts = {};
+      for (const p of PARTIES_BASE) partyCounts[p.code] = 0;
+      for (const r of rows) partyCounts[r.partyCode] = (partyCounts[r.partyCode] || 0) + 1;
+
+      // referendum totals
+      const refTotals = { AGREE: 0, DISAGREE: 0, NO_RIGHT: 0, NA: 0 };
+      for (const r of rows) {
+        if (refTotals[r.referendum] !== undefined) refTotals[r.referendum]++;
+      }
+
+      let out = `Total: ${rows.length}\n\n[Referendum]\n`;
+      for (const k of ["AGREE", "DISAGREE", "NO_RIGHT", "NA"]) out += `${refLabel(k)}: ${refTotals[k]}\n`;
+
+      out += `\n[Party]\n`;
+      for (const p of PARTIES_BASE) out += `${p.th} (${p.code}): ${partyCounts[p.code] || 0}\n`;
+
+      const last = rows[rows.length - 1];
+      if (last) out += `\nLast: ${last.ts} | ${last.stationId} | ${last.partyCode} | ${refLabel(last.referendum)}`;
+
+      statsBox.textContent = out;
+    }
+
+    document.getElementById("saveStationBtn").onclick = () => {
+      localStorage.setItem("stationId", stationIdInput.value.trim() || "A1");
+      toast("Saved Station ID");
+    };
+
+    document.getElementById("exportBtn").onclick = async () => {
+      const rows = await getAllVotes();
+      const csv = toCSV(rows);
+      const filename = `exitpoll_${getStationId()}_${new Date().toISOString().slice(0, 10)}.csv`;
+      downloadTextFile(filename, csv);
+    };
+
+    document.getElementById("undoBtn").onclick = async () => {
+      await deleteLastVote();
+      await refreshStats();
+      toast("Undo");
+    };
+
+    document.getElementById("clearBtn").onclick = async () => {
+      if (confirm("ล้างข้อมูลทั้งหมด?")) {
+        await clearAll();
+        await refreshStats();
+        toast("Reset");
+      }
+    };
+
+    document.getElementById("closeAdminBtn").onclick = () => {
+      adminModal.style.display = "none";
+      adminBackdrop.style.display = "none";
+    };
+
+    adminBackdrop.addEventListener("click", () => {
+      adminModal.style.display = "none";
+      adminBackdrop.style.display = "none";
+    });
+  </script>
+</body>
+
 </html>

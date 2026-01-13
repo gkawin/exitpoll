@@ -1,0 +1,112 @@
+  .party-card {
+      --band: #F26522;
+      /* สีหลัก */
+      --wm-alpha: .16;
+      /* ความจางของ watermark */
+      --wm-size: 92px;
+      /* ขนาดตัวเลข watermark */
+      --tail: 120px;
+      /* ความกว้างโซนท้ายการ์ดสำหรับ watermark */
+
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 0, 0, .12);
+      background: #fff;
+      padding: 14px 16px;
+      padding-right: calc(var(--tail) + 16px);
+      min-height: 90px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .06);
+  }
+
+  /* watermark area (ท้ายการ์ด) */
+  .party-card::after {
+      content: attr(data-no);
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      font-weight: 900;
+      font-size: var(--wm-size);
+      letter-spacing: -0.04em;
+      color: var(--band);
+      opacity: var(--wm-alpha);
+      pointer-events: none;
+      user-select: none;
+
+      /* ให้ watermark อยู่เฉพาะโซนท้ายการ์ด */
+      width: var(--tail);
+      text-align: right;
+
+      /* เฉือนขอบซ้ายของโซนท้ายเล็กน้อย (เหมือน mask) */
+      clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  /* เพิ่มเลเยอร์อ่อนๆด้านขวาให้ดูเป็นพื้นที่ท้ายการ์ด */
+  .party-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: var(--tail);
+      background: linear-gradient(90deg,
+              rgba(255, 255, 255, 0) 0%,
+              rgba(255, 255, 255, .65) 35%,
+              rgba(255, 255, 255, .95) 100%);
+      pointer-events: none;
+  }
+
+  .party-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      position: relative;
+  }
+
+  .party-logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, .06);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: #111;
+      flex: 0 0 auto;
+  }
+
+  .party-text {
+      min-width: 0;
+  }
+
+  .party-name {
+      font-weight: 900;
+      font-size: 18px;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+  }
+
+  .party-sub {
+      margin-top: 4px;
+      font-size: 12px;
+      opacity: .7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+  }
+
+  /* demo: แถบสีเล็กๆด้านซ้าย */
+  .accent {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 6px;
+      background: var(--band);
+  }

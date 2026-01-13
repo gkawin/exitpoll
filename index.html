@@ -515,7 +515,17 @@
         partyLeft.className = "party-left";
         const partyLogo = document.createElement("div");
         partyLogo.className = "party-logo";
-        partyLogo.textContent = "Logo";
+
+        const img = document.createElement("img");
+        img.src = `./party-logos/${p.code}.png`;
+        img.alt = p.th;
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "contain";
+        partyLogo.appendChild(img);
+
+
+
         const partyText = document.createElement("div");
         partyText.className = "party-text";
         const partyName = document.createElement("div");
@@ -539,7 +549,8 @@
         <div class="party-card" data-no="1" style="--band:#F26522;">
           <div class="accent"></div>
           <div class="party-left">
-            <div class="party-logo">Logo</div>
+            <div class="party-logo">
+              </div>
             <div class="party-text">
               <div class="party-name">พรรคประชาชน</div>
               <div class="party-sub">People's Party</div>

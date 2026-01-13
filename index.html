@@ -196,7 +196,7 @@
         { code: "DEMOCRAT", th: "พรรคประชาธิปัตย์", en: "Democrat Party", colors: ["#00AEEF"] },
         { code: "UTN", th: "พรรครวมไทยสร้างชาติ", en: "United Thai Nation Party", colors: ["#192143"] },
         { code: "PPRP", th: "พรรคพลังประชารัฐ", en: "Palang Pracharath Party", colors: ["#0000FF", "#FF0000"] },
-        { code: "THAI_SANG_THAI", th: "พรรคไทยสร้างไทย", en: "Thai Sang Thai Party", colors: ["#005696"] },
+        { code: "THAI_SANG_THAI", th: "พรรคไทยสร้างไทย", en: "Thai Sang Thai Party", colors: ["#7338D8", "#F7EC67"] },
         { code: "CHARTTHAIPATTANA", th: "พรรคชาติไทยพัฒนา", en: "Chartthaipattana Party", colors: ["#FF69B4"] },
         { code: "CHART_PATTANAKLA", th: "พรรคชาติพัฒนากล้า", en: "Chart Pattanakla Party", colors: ["#00478F", "#FFD700"] },
         { code: "THAI_KAO_MAI", th: "พรรคไทยก้าวใหม่", en: "Thai Kao Mai Party", colors: ["#2D2D48"] },
@@ -487,12 +487,11 @@
       function renderPartyButtons() {
         partyButtonsEl.innerHTML = "";
         const ALPHA = 0.8
-        const BG_ALPHA = ALPHA / 1.5; // dim background for better text contrast.
 
         for (const p of partyOrder) {
           const b = document.createElement("button");
           b.className = "party-btn";
-          b.style.background = partyBackgroundCSS(p.colors, BG_ALPHA);
+          b.style.background = partyBackgroundCSS(p.colors, ALPHA);
           b.style.color = pickTextColor(p.colors, ALPHA);
 
           if (p.code === "NO_VOTE") {
@@ -520,8 +519,8 @@
           icon.src = p.icon || `icons/${p.code.toLowerCase()}.png`;
           icon.alt = `${p.th} logo`;
           icon.loading = "lazy";
-          icon.style.width = "36px";
-          icon.style.height = "36px";
+          icon.style.width = "52px";
+          icon.style.height = "52px";
           icon.style.objectFit = "contain";
           icon.onerror = () => {
             icon.onerror = null;

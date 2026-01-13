@@ -199,7 +199,9 @@
         { code: "THAI_SANG_THAI", th: "พรรคไทยสร้างไทย", en: "Thai Sang Thai Party", colors: ["#005696"] },
         { code: "CHARTTHAIPATTANA", th: "พรรคชาติไทยพัฒนา", en: "Chartthaipattana Party", colors: ["#FF69B4"] },
         { code: "CHART_PATTANAKLA", th: "พรรคชาติพัฒนากล้า", en: "Chart Pattanakla Party", colors: ["#00478F", "#FFD700"] },
-        { code: "THAI_KAO_MAI", th: "พรรคไทยก้าวใหม่", en: "Thai Kao Mai Party", colors: ["#F47920"] },
+        { code: "THAI_KAO_MAI", th: "พรรคไทยก้าวใหม่", en: "Thai Kao Mai Party", colors: ["#2D2D48"] },
+        { code: "KLA_THUM", th: "พรรคกล้าธรรม", en: "Kla Thum Party", colors: [] },
+        { code: "ECON", th: "พรรคเศรษฐกิจ", en: "Economic Party", colors: []},
         { code: "NO_VOTE", th: "ไม่เลือกพรรคใด", en: "No Vote", colors: ["#FFFFFF"] },
       ];
 
@@ -216,16 +218,28 @@
         const n = parseInt(full, 16);
         return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
       }
-      function relLuminance(hex) {
-        const { r, g, b } = hexToRgb(hex);
-        const srgb = [r, g, b].map((v) => {
+      function blendRgb(fg, bg, a) {
+        return {
+          r: Math.round(fg.r * a + bg.r * (1 - a)),
+          g: Math.round(fg.g * a + bg.g * (1 - a)),
+          b: Math.round(fg.b * a + bg.b * (1 - a)),
+        };
+      }
+      function relLuminanceFromRgb({ r, g, b }) {
+        const srgb = [r, g, b].map(v => {
           const x = v / 255;
           return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
         });
         return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
       }
-      function pickTextColor(colors) {
-        const avgLum = colors.map(relLuminance).reduce((a, b) => a + b, 0) / colors.length;
+      function relLuminance(hex, alpha = 1, baseBgHex = "#FFFFFF") {
+        const fg = hexToRgb(hex);
+        const bg = hexToRgb(baseBgHex);
+        const blended = alpha < 1 ? blendRgb(fg, bg, alpha) : fg;
+        return relLuminanceFromRgb(blended);
+      }
+      function pickTextColor(colors, alpha = 1, baseBgHex = "#FFFFFF") {
+        const avgLum = colors.map(c => relLuminance(c, alpha, baseBgHex)).reduce((a, b) => a + b, 0) / colors.length;
         // threshold ปรับได้: ต่ำ = ฉากมืด -> ใช้ขาว
         return avgLum < 0.45 ? "#FFFFFF" : "#111111";
       }
@@ -442,20 +456,21 @@
       /** ====== Render party buttons with colors ====== */
       const partyButtonsEl = document.getElementById("partyButtons");
 
-      function partyBackgroundCSS(colors) {
+      function partyBackgroundCSS(colors, alpha = 1) {
         if (colors.length === 1) return colors[0];
         // split 50/50 for two-color parties
-        return `linear-gradient(90deg, ${colors[0]} 0 50%, ${colors[1]} 50% 100%)`;
+        return `linear-gradient(90deg, ${colors[0]} 0 30%, ${colors[1]} 70% 100%)`;
       }
 
       function renderPartyButtons() {
         partyButtonsEl.innerHTML = "";
+        const ALPHA = 0.7
 
         for (const p of partyOrder) {
           const b = document.createElement("button");
           b.className = "party-btn";
-          b.style.background = partyBackgroundCSS(p.colors);
-          b.style.color = pickTextColor(p.colors);
+          b.style.background = partyBackgroundCSS(p.colors, ALPHA);
+          b.style.color = pickTextColor(p.colors, ALPHA);
 
           if (p.code === "NO_VOTE") {
             b.style.borderColor = "rgba(0,0,0,0.5)";

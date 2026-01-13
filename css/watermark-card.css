@@ -9,6 +9,7 @@
       /* ความกว้างโซนท้ายการ์ดสำหรับ watermark */
 
       position: relative;
+      color: black;
       overflow: hidden;
       border-radius: 16px;
       border: 1px solid rgba(0, 0, 0, .12);

@@ -492,7 +492,7 @@
         for (const p of partyOrder) {
           const b = document.createElement("button");
           b.className = "party-btn";
-          b.style.background = partyBackgroundCSS(p.colors, ALPHA);
+          b.style.background = partyBackgroundCSS(p.colors, BG_ALPHA);
           b.style.color = pickTextColor(p.colors, ALPHA);
 
           if (p.code === "NO_VOTE") {
@@ -507,8 +507,8 @@
           content.style.gap = "12px";
 
           const iconWrapper = document.createElement("div");
-          iconWrapper.style.width = "48px";
-          iconWrapper.style.height = "48px";
+          iconWrapper.style.width = "52px";
+          iconWrapper.style.height = "52px";
           iconWrapper.style.borderRadius = "12px";
           iconWrapper.style.background = "rgba(255,255,255,0.22)";
           iconWrapper.style.display = "flex";

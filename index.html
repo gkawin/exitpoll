@@ -200,8 +200,8 @@
         { code: "CHARTTHAIPATTANA", th: "พรรคชาติไทยพัฒนา", en: "Chartthaipattana Party", colors: ["#FF69B4"] },
         { code: "CHART_PATTANAKLA", th: "พรรคชาติพัฒนากล้า", en: "Chart Pattanakla Party", colors: ["#00478F", "#FFD700"] },
         { code: "THAI_KAO_MAI", th: "พรรคไทยก้าวใหม่", en: "Thai Kao Mai Party", colors: ["#2D2D48"] },
-        { code: "KLA_THUM", th: "พรรคกล้าธรรม", en: "Kla Thum Party", colors: [] },
-        { code: "ECON", th: "พรรคเศรษฐกิจ", en: "Economic Party", colors: []},
+        { code: "KLA_THUM", th: "พรรคกล้าธรรม", en: "Kla Thum Party", colors: ["#D4A536","#00176F", "#6CC965"] },
+        { code: "ECON", th: "พรรคเศรษฐกิจ", en: "Economic Party", colors: ["#FFC155", "#000000"]},
         { code: "NO_VOTE", th: "ไม่เลือกพรรคใด", en: "No Vote", colors: ["#FFFFFF"] },
       ];
 
@@ -455,11 +455,33 @@
 
       /** ====== Render party buttons with colors ====== */
       const partyButtonsEl = document.getElementById("partyButtons");
-
       function partyBackgroundCSS(colors, alpha = 1) {
-        if (colors.length === 1) return colors[0];
-        // split 50/50 for two-color parties
-        return `linear-gradient(90deg, ${colors[0]} 0 30%, ${colors[1]} 70% 100%)`;
+        if (!colors || colors.length === 0) return "#FFFFFF";
+
+        // helper to return either hex or rgba based on alpha
+        const toCssColor = (hex) => {
+          if (alpha >= 1) return hex;
+          const { r, g, b } = hexToRgb(hex);
+          return `rgba(${r},${g},${b},${alpha})`;
+        };
+
+        if (colors.length === 1) {
+          return toCssColor(colors[0]);
+        }
+
+        // two-color special layout (keeps the previous visual emphasis)
+        if (colors.length === 2) {
+          return `linear-gradient(90deg, ${toCssColor(colors[0])} 0 30%, ${toCssColor(
+        colors[1]
+          )} 70% 100%)`;
+        }
+
+        // for 3+ colors distribute stops evenly
+        const n = colors.length;
+        const stops = colors
+          .map((c, i) => `${toCssColor(c)} ${Math.round((i / (n - 1)) * 100)}%`)
+          .join(", ");
+        return `linear-gradient(90deg, ${stops})`;
       }
 
       function renderPartyButtons() {

@@ -38,7 +38,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 12px;
     }
 
@@ -519,9 +519,16 @@
         const img = document.createElement("img");
         img.src = `./party-logos/${p.code.toLowerCase()}.png`;
         img.alt = p.th;
+        img.loading = "lazy";
         img.style.width = "100%";
         img.style.height = "100%";
         img.style.objectFit = "contain";
+
+        img.onerror = () => {
+          img.onerror = null;
+          img.src = `https://picsum.photos/seed/${encodeURIComponent(p.code)}/64`;
+        };
+      
         partyLogo.appendChild(img);
 
 
@@ -586,7 +593,7 @@
           AGREE: "เห็นชอบ",
           DISAGREE: "ไม่เห็นชอบ",
           NO_RIGHT: "ไม่มีสิทธิ์",
-          NA: "ไม่สะดวกตอบ",
+          "N/A": "ไม่สะดวกตอบ",
         }[x] || x
       );
     }

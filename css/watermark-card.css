@@ -1,7 +1,7 @@
   .party-card {
       --band: #F26522;
       /* สีหลัก */
-      --wm-alpha: .16;
+      --wm-alpha: .2;
       /* ความจางของ watermark */
       --wm-size: 92px;
       /* ขนาดตัวเลข watermark */

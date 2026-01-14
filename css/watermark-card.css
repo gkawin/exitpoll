@@ -81,7 +81,8 @@
   }
 
   .party-text {
-      min-width: 0;
+    
+      /* min-width: 0; */
   }
 
   .party-name {

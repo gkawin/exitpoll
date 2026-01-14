@@ -517,7 +517,7 @@
         partyLogo.className = "party-logo";
 
         const img = document.createElement("img");
-        img.src = `./party-logos/${p.code}.png`;
+        img.src = `./party-logos/${p.code.toLowerCase()}.png`;
         img.alt = p.th;
         img.style.width = "100%";
         img.style.height = "100%";

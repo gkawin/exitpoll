@@ -173,7 +173,7 @@
           ts: new Date().toISOString(),
           stationId,
           partyCode,
-          referendum, // "AGREE" | "DISAGREE" | "NO_RIGHT" | "NA"
+          referendum, // "AGREE" | "DISAGREE" | "NO_RIGHT" | "N/A"
         });
         tx.oncomplete = () => resolve(true);
         tx.onerror = () => reject(tx.error);
@@ -489,13 +489,13 @@
       for (const r of rows) partyCounts[r.partyCode] = (partyCounts[r.partyCode] || 0) + 1;
 
       // referendum totals
-      const refTotals = { AGREE: 0, DISAGREE: 0, NO_RIGHT: 0, NA: 0 };
+      const refTotals = { AGREE: 0, DISAGREE: 0, NO_RIGHT: 0, "N/A": 0 };
       for (const r of rows) {
         if (refTotals[r.referendum] !== undefined) refTotals[r.referendum]++;
       }
 
       let out = `Total: ${rows.length}\n\n[Referendum]\n`;
-      for (const k of ["AGREE", "DISAGREE", "NO_RIGHT", "NA"]) out += `${refLabel(k)}: ${refTotals[k]}\n`;
+      for (const k of ["AGREE", "DISAGREE", "NO_RIGHT", "N/A"]) out += `${refLabel(k)}: ${refTotals[k]}\n`;
 
       out += `\n[Party]\n`;
       for (const p of PARTIES_BASE) out += `${p.th} (${p.code}): ${partyCounts[p.code] || 0}\n`;

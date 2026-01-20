@@ -25,7 +25,11 @@
 </head>
 
 <body>
-  <h2 id="title">Exit Poll เลือกตั้ง ปี 2569</h2>
+  <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
+    <h2 id="title">Exit Poll เลือกตั้ง ปี 2569</h2>
+    <button id="adminButton">เข้าใช้งานสำหรับเจ้าหน้าที่</button>
+  </div>
+  
 
   <div class="grid" id="partyButtons"></div>
 
@@ -447,10 +451,19 @@
 
     /** ====== Admin modal ====== */
     const titleEl = document.getElementById("title");
+    const adminButton = document.getElementById("adminButton");
     const adminBackdrop = document.getElementById("adminBackdrop");
     const adminModal = document.getElementById("adminModal");
     const statsBox = document.getElementById("statsBox");
     const stationIdInput = document.getElementById("stationId");
+
+
+    async function adminInit() {
+      stationIdInput.value = getStationId();
+      await refreshStats();
+      adminBackdrop.style.display = "block";
+      adminModal.style.display = "block";
+    }
 
     let taps = [];
     titleEl.addEventListener("click", async () => {
@@ -462,12 +475,17 @@
         const pin = prompt("Enter Admin PIN:");
         if (pin !== ADMIN_PIN) return;
 
-        stationIdInput.value = getStationId();
-        await refreshStats();
-        adminBackdrop.style.display = "block";
-        adminModal.style.display = "block";
+        await adminInit();
       }
     });
+
+    adminButton.onclick = async () => {
+      const pin = prompt("Enter Admin PIN:");
+      if (pin !== ADMIN_PIN) return;
+
+      await adminInit();
+    };
+
 
     function refLabel(x) {
       return (

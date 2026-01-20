@@ -25,8 +25,11 @@
 </head>
 
 <body>
-  <h2 id="title">ในการเลือกตั้งรอบนี้ คุณได้กาบัตร<b>บัญชีรายชื่อ</b>ให้พรรคใด</h2>
-
+  <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
+    <h2 id="title">ในการเลือกตั้งรอบนี้ คุณได้กาบัตร<b>บัญชีรายชื่อ</b>ให้พรรคใด</h2>
+    <button id="adminButton" aria-label="เข้าใช้งานสำหรับเจ้าหน้าที่ (แอดมิน)">เข้าใช้งานสำหรับเจ้าหน้าที่</button>
+  </div>
+ 
   <div class="grid" id="partyButtons"></div>
 
   <div class="toast" id="toast"></div>
@@ -446,10 +449,22 @@
 
     /** ====== Admin modal ====== */
     const titleEl = document.getElementById("title");
+    const adminButton = document.getElementById("adminButton");
     const adminBackdrop = document.getElementById("adminBackdrop");
     const adminModal = document.getElementById("adminModal");
     const statsBox = document.getElementById("statsBox");
     const stationIdInput = document.getElementById("stationId");
+
+    /**
+     * Initializes the admin modal by loading the current station ID and statistics,
+     * then displays the admin backdrop and modal to the user.
+     */
+    async function adminInit() {
+      stationIdInput.value = getStationId();
+      await refreshStats();
+      adminBackdrop.style.display = "block";
+      adminModal.style.display = "block";
+    }
 
     let taps = [];
     titleEl.addEventListener("click", async () => {
@@ -461,12 +476,17 @@
         const pin = prompt("Enter Admin PIN:");
         if (pin !== ADMIN_PIN) return;
 
-        stationIdInput.value = getStationId();
-        await refreshStats();
-        adminBackdrop.style.display = "block";
-        adminModal.style.display = "block";
+        await adminInit();
       }
     });
+
+    adminButton.addEventListener("click", async () => {
+      const pin = prompt("Enter Admin PIN:");
+      if (pin !== ADMIN_PIN) return;
+
+      await adminInit();
+    });
+
 
     function refLabel(x) {
       return (

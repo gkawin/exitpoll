@@ -81,26 +81,20 @@
   }
 
   .party-text {
-    
-      /* min-width: 0; */
+      min-width: 0;
   }
 
   .party-name {
       font-weight: 900;
-      font-size: 18px;
-      line-height: 1.1;
-      white-space: nowrap;
+      font-size: 20px;
       overflow: hidden;
-      text-overflow: ellipsis;
   }
 
   .party-sub {
       margin-top: 4px;
       font-size: 12px;
       opacity: .7;
-      white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
   }
 
   /* demo: แถบสีเล็กๆด้านซ้าย */

@@ -59,8 +59,6 @@ Exit Poll แบบ PWA สำหรับการเลือกตั้ง�
 
 [Kawin Glomjai](https://github.com/gkawin)
 
-[Poomrit Ummalukacholk](https://github.com/Paulpoomrit)
-
 [Ratthamnoon Prakitpong](https://github.com/rprakitpong)
 คนนี้ไม่ได้กลับ Vancouver แต่สู้จองตั๋วรถเมล์ไป Exit Poll ที่ Ottawa แทน ใจสู้มากๆ
 
